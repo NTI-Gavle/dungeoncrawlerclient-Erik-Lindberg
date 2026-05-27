@@ -1,5 +1,5 @@
-﻿using System.Net.Sockets;
-using System.Net;
+﻿using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace DungeonCrawlerClient
@@ -8,34 +8,71 @@ namespace DungeonCrawlerClient
     {
         static void Main(string[] args)
         {
-            IPAddress iPAddress = IPAddress.Parse("127.0.0.1");
-            IPEndPoint iPEndPoint = new IPEndPoint(iPAddress, 54321);
+            IPAddress ipAddress =
+                IPAddress.Parse("127.0.0.1");
+
+            IPEndPoint endPoint =
+                new IPEndPoint(ipAddress, 54321);
+
             TcpClient tcpClient = new TcpClient();
 
             try
             {
-                tcpClient.Connect(iPEndPoint);
+                tcpClient.Connect(endPoint);
+
+                Console.WriteLine("Connected.");
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine("Could not connect to server.");
+                Console.WriteLine("Could not connect.");
+                return;
             }
+
+            NetworkStream stream =
+                tcpClient.GetStream();
 
             while (tcpClient.Connected)
             {
-                byte[] bytes = new byte[1024];
-                tcpClient.GetStream().Read(bytes, 0, bytes.Length);
-                string message = Encoding.UTF8.GetString(bytes);
-                Console.Write(message);
+                try
+                {
+                    byte[] bytes = new byte[1024];
 
-                string command = Console.ReadLine();
-                byte[] writeBytes = Encoding.UTF8.GetBytes(command);
-                tcpClient.GetStream().Write(writeBytes, 0, writeBytes.Length);
+                    int length =
+                        stream.Read(bytes, 0, bytes.Length);
 
+                    if (length == 0)
+                    {
+                        break;
+                    }
+
+                    string message =
+                        Encoding.UTF8.GetString(bytes, 0, length);
+
+                    Console.Write(message);
+
+                    string? command = Console.ReadLine();
+
+                    if (command == null)
+                    {
+                        continue;
+                    }
+
+                    byte[] writeBytes =
+                        Encoding.UTF8.GetBytes(command);
+
+                    stream.Write(
+                        writeBytes,
+                        0,
+                        writeBytes.Length);
+                }
+                catch
+                {
+                    Console.WriteLine("Disconnected.");
+                    break;
+                }
             }
 
             tcpClient.Close();
-
         }
     }
 }
